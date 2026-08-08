@@ -2,9 +2,101 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Kalkulator Modern</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: #121212;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .calculator {
+      width: 100%;
+      max-width: 360px;
+      background-color: #1e1e24;
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .display {
+      background-color: #151518;
+      border-radius: 16px;
+      padding: 20px;
+      text-align: right;
+      margin-bottom: 20px;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      word-wrap: break-word;
+      word-break: break-all;
+    }
+
+    .history {
+      color: #888888;
+      font-size: 1.1rem;
+      min-height: 24px;
+      margin-bottom: 6px;
+    }
+
+    .result {
+      color: #ffffff;
+      font-size: 2.5rem;
+      font-weight: bold;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .btn {
+      background-color: #2b2b36;
+      color: #ffffff;
+      font-size: 1.5rem;
+      border: none;
+      border-radius: 16px;
+      padding: 18px 0;
+      cursor: pointer;
+      transition: background-color 0.15s, transform 0.05s;
+    }
+
+    .btn:active {
+      background-color: #3f3f50;
+      transform: scale(0.95);
+    }
+
+    .btn-action {
+      background-color: #3d3d4e;
+      color: #ff5555;
+    }
+
+    .btn-operator {
+      background-color: #3d3d4e;
+      color: #4da6ff;
+    }
+
+    .btn-equals {
+      background-color: #4da6ff;
+      color: #ffffff;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
   <div class="calculator">
@@ -34,12 +126,109 @@
       <button class="btn" onclick="appendNumber('3')">3</button>
       <button class="btn btn-operator" onclick="appendOperator('+')">+</button>
 
-      <button class="btn btn-zero" onclick="appendNumber('0')">0</button>
+      <button class="btn" onclick="appendNumber('0')">0</button>
       <button class="btn" onclick="appendNumber('.')">.</button>
-      <button class="btn btn-equals" onclick="calculate()">=</button>
+      <button class="btn btn-equals" style="grid-column: span 2;" onclick="calculate()">=</button>
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    let currentInput = "0";
+    let historyInput = "";
+    let isEvaluated = false;
+
+    const resultElement = document.getElementById("result");
+    const historyElement = document.getElementById("history");
+
+    function updateDisplay() {
+      resultElement.innerText = currentInput;
+      historyElement.innerText = historyInput;
+    }
+
+    function appendNumber(num) {
+      if (isEvaluated) {
+        currentInput = num === "." ? "0." : num;
+        historyInput = "";
+        isEvaluated = false;
+      } else {
+        if (currentInput === "0" && num !== ".") {
+          currentInput = num;
+        } else if (num === "." && currentInput.includes(".")) {
+          return;
+        } else {
+          currentInput += num;
+        }
+      }
+      updateDisplay();
+    }
+
+    function appendOperator(op) {
+      if (isEvaluated) {
+        historyInput = currentInput + " " + getOpSymbol(op);
+        currentInput = "0";
+        isEvaluated = false;
+      } else {
+        if (historyInput !== "" && currentInput === "0") {
+          historyInput = historyInput.slice(0, -2) + getOpSymbol(op) + " ";
+        } else {
+          historyInput += currentInput + " " + getOpSymbol(op) + " ";
+          currentInput = "0";
+        }
+      }
+      updateDisplay();
+    }
+
+    function getOpSymbol(op) {
+      if (op === "*") return "×";
+      if (op === "/") return "÷";
+      if (op === "-") return "−";
+      return op;
+    }
+
+    function clearDisplay() {
+      currentInput = "0";
+      historyInput = "";
+      isEvaluated = false;
+      updateDisplay();
+    }
+
+    function deleteChar() {
+      if (isEvaluated) {
+        clearDisplay();
+        return;
+      }
+      if (currentInput.length > 1) {
+        currentInput = currentInput.slice(0, -1);
+      } else {
+        currentInput = "0";
+      }
+      updateDisplay();
+    }
+
+    function calculate() {
+      if (historyInput === "" || isEvaluated) return;
+
+      let fullExpression = historyInput + currentInput;
+      let sanitizedExpression = fullExpression
+        .replace(/×/g, "*")
+        .replace(/÷/g, "/")
+        .replace(/−/g, "-")
+        .replace(/%/g, "/100");
+
+      try {
+        let result = eval(sanitizedExpression);
+        if (!Number.isInteger(result)) {
+          result = parseFloat(result.toFixed(8));
+        }
+        historyInput = fullExpression + " =";
+        currentInput = String(result);
+        isEvaluated = true;
+      } catch (error) {
+        currentInput = "Error";
+        isEvaluated = true;
+      }
+      updateDisplay();
+    }
+  </script>
 </body>
 </html>
